@@ -613,6 +613,7 @@ define(function (require) {
 
         _noDataCheck: function(magicOption) {
             var series = magicOption.series;
+            this._zr.hideLoading();
             for (var i = 0, l = series.length; i < l; i++) {
                 if (series[i].type == ecConfig.CHART_TYPE_MAP
                     || (series[i].data && series[i].data.length > 0)
@@ -1159,9 +1160,17 @@ define(function (require) {
             
             this._zr.clearAnimation();
             var chartList = this._chartList;
+            var chartAnimationCount = 0;
+            var chartAnimationDone = function () {
+                chartAnimationCount--;
+                if (chartAnimationCount === 0) {
+                    animationDone();
+                }
+            }
             for (var i = 0, l = chartList.length; i < l; i++) {
                 if (magicOption.addDataAnimation && chartList[i].addDataAnimation) {
-                    chartList[i].addDataAnimation(params);
+                    chartAnimationCount++;
+                    chartList[i].addDataAnimation(params, chartAnimationDone);
                 }
             }
 
@@ -1170,7 +1179,7 @@ define(function (require) {
             
             this._option = magicOption;
             var self = this;
-            setTimeout(function (){
+            function animationDone() {
                 if (!self._zr) {
                     return; // 已经被释放
                 }
@@ -1186,7 +1195,11 @@ define(function (require) {
                     {option: magicOption},
                     self
                 );
-            }, magicOption.addDataAnimation ? magicOption.animationDurationUpdate : 0);
+            };
+            
+            if (!magicOption.addDataAnimation) {
+                setTimeout(animationDone, 0);
+            }
             return this;
         },
 

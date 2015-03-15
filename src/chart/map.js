@@ -179,10 +179,12 @@ define(function (require) {
                         && zrUtil.merge(this._scaleLimitMap[mapType], series[i].scaleLimit, true);
                     
                     this._roamMap[mapType] = series[i].roam || this._roamMap[mapType];
-                    
-                    this._hoverLinkMap[mapType] = series[i].dataRangeHoverLink
-                                                  || this._hoverLinkMap[mapType];
-                    
+
+                    if (this._hoverLinkMap[mapType] == null || this._hoverLinkMap[mapType]) {
+                        // false 1票否决
+                        this._hoverLinkMap[mapType] = series[i].dataRangeHoverLink; 
+                    }
+
                     this._nameMap[mapType] = this._nameMap[mapType] || {};
                     series[i].nameMap
                         && zrUtil.merge(this._nameMap[mapType], series[i].nameMap, true);
@@ -229,17 +231,22 @@ define(function (require) {
                         for (var j = 0, k = data.length; j < k; j++) {
                             name = this._nameChange(mapType, data[j].name);
                             valueData[mapType][name] = valueData[mapType][name] 
-                                                       || {seriesIndex : []};
+                                                       || {
+                                                           seriesIndex : [],
+                                                           valueMap: {}
+                                                       };
                             for (var key in data[j]) {
                                 if (key != 'value') {
                                     valueData[mapType][name][key] = 
                                         data[j][key];
                                 }
                                 else if (!isNaN(data[j].value)) {
+                                    // value
                                     valueData[mapType][name].value == null
                                     && (valueData[mapType][name].value = 0);
                                     
-                                    valueData[mapType][name].value +=  (+data[j].value);
+                                    valueData[mapType][name].value += (+data[j].value);
+                                    valueData[mapType][name].valueMap[i] = +data[j].value;
                                 }
                             }
                             //索引有该区域的系列样式
@@ -754,7 +761,10 @@ define(function (require) {
                     value = data.value;
                 }
                 else {
-                    data = '-';
+                    data = {
+                        name: name,
+                        value: '-'
+                    };
                     seriesName = '';
                     queryTarget = [];
                     for (var key in mapSeries) {
@@ -1165,53 +1175,53 @@ define(function (require) {
                             var shapeStyle = shape.style;
                             shape.position[0] = transform.left;
                             shape.position[1] = transform.top;
-                            if (shapeType == 'path' 
-                                || shapeType == 'symbol'
-                                || shapeType == 'circle'
-                                || shapeType == 'rectangle'
-                                || shapeType == 'polygon'
-                                || shapeType == 'line'
-                                || shapeType == 'ellipse'
-                            ) {
-                                shape.scale[0] *= delta;
-                                shape.scale[1] *= delta;
-                            }
-                            else if (shapeType == 'mark-line') {
-                                scaleMarkline(shapeStyle, delta);
-                            }
-                            else if (shapeType == 'polyline') {
-                                scalePolyline(shapeStyle, delta);
-                            }
-                            else if (shapeType == 'shape-bundle') {
-                                for (var j = 0; j < shapeStyle.shapeList.length; j++) {
-                                    var subShape = shapeStyle.shapeList[j];
-                                    if (subShape.type == 'mark-line') {
-                                        scaleMarkline(subShape.style, delta);
+
+                            switch (shapeType) {
+                                case 'path':
+                                case 'symbol':
+                                case 'circle':
+                                case 'rectangle':
+                                case 'polygon':
+                                case 'line':
+                                case 'ellipse':
+                                    shape.scale[0] *= delta;
+                                    shape.scale[1] *= delta;
+                                    break;
+                                case 'mark-line':
+                                    scaleMarkline(shapeStyle, delta);
+                                    break;
+                                case 'polyline':
+                                    scalePolyline(shapeStyle, delta);
+                                    break;
+                                case 'shape-bundle':
+                                    for (var j = 0; j < shapeStyle.shapeList.length; j++) {
+                                        var subShape = shapeStyle.shapeList[j];
+                                        if (subShape.type == 'mark-line') {
+                                            scaleMarkline(subShape.style, delta);
+                                        }
+                                        else if (subShape.type == 'polyline') {
+                                            scalePolyline(subShape.style, delta);
+                                        }
                                     }
-                                    else if (subShape.type == 'polyline') {
-                                        scalePolyline(subShape.style, delta);
+                                    break;
+                                case 'icon':
+                                case 'image':
+                                    geoAndPos = this.geo2pos(mapType, shape._geo);
+                                    shapeStyle.x = shapeStyle._x =
+                                        geoAndPos[0] - shapeStyle.width / 2;
+                                    shapeStyle.y = shapeStyle._y =
+                                        geoAndPos[1] - shapeStyle.height / 2;
+                                    break;
+                                default:
+                                    geoAndPos = this.geo2pos(mapType, shape._geo);
+                                    shapeStyle.x = geoAndPos[0];
+                                    shapeStyle.y = geoAndPos[1];
+                                    if (shapeType == 'text') {
+                                        shape._style.x = shape.highlightStyle.x
+                                                                   = geoAndPos[0];
+                                        shape._style.y = shape.highlightStyle.y
+                                                                   = geoAndPos[1];
                                     }
-                                }
-                            }
-                            else if (shapeType == 'icon'
-                                     || shapeType == 'image'
-                            ) {
-                                geoAndPos = this.geo2pos(mapType, shape._geo);
-                                shapeStyle.x = shapeStyle._x =
-                                    geoAndPos[0] - shapeStyle.width / 2;
-                                shapeStyle.y = shapeStyle._y =
-                                    geoAndPos[1] - shapeStyle.height / 2;
-                            }
-                            else {
-                                geoAndPos = this.geo2pos(mapType, shape._geo);
-                                shapeStyle.x = geoAndPos[0];
-                                shapeStyle.y = geoAndPos[1];
-                                if (shapeType == 'text') {
-                                    shape._style.x = shape.highlightStyle.x
-                                                               = geoAndPos[0];
-                                    shape._style.y = shape.highlightStyle.y
-                                                               = geoAndPos[1];
-                                }
                             }
                             
                             this.zr.modShape(shape.id);

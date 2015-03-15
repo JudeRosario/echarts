@@ -27,9 +27,9 @@ define(function (require) {
     var _instances = {};    // ECharts实例map索引
     var DOM_ATTRIBUTE_KEY = '_echarts_instance_';
     
-    self.version = '2.2.0';
+    self.version = '2.2.1';
     self.dependencies = {
-        zrender: '2.0.7'
+        zrender: '2.0.8'
     };
     /**
      * 入口方法 
@@ -613,7 +613,7 @@ define(function (require) {
 
         _noDataCheck: function(magicOption) {
             var series = magicOption.series;
-            this._zr.hideLoading();
+
             for (var i = 0, l = series.length; i < l; i++) {
                 if (series[i].type == ecConfig.CHART_TYPE_MAP
                     || (series[i].data && series[i].data.length > 0)
@@ -1166,7 +1166,7 @@ define(function (require) {
                 if (chartAnimationCount === 0) {
                     animationDone();
                 }
-            }
+            };
             for (var i = 0, l = chartList.length; i < l; i++) {
                 if (magicOption.addDataAnimation && chartList[i].addDataAnimation) {
                     chartAnimationCount++;
@@ -1195,7 +1195,7 @@ define(function (require) {
                     {option: magicOption},
                     self
                 );
-            };
+            }
             
             if (!magicOption.addDataAnimation) {
                 setTimeout(animationDone, 0);

@@ -27,7 +27,7 @@ define(function (require) {
 
     // Some utility functions
     function isCoordAvailable(coord) {
-        return coord.x != null && coord.y != null
+        return coord.x != null && coord.y != null;
     }
     
     function Base(ecTheme, messageCenter, zr, option, myChart) {
@@ -702,10 +702,10 @@ define(function (require) {
                     // 不在显示区域内
                     continue;
                 }
-                mlData[0].x = mlData[0].x != null ? mlData[0].x : pos[0][0];
-                mlData[0].y = mlData[0].y != null ? mlData[0].y : pos[0][1];
-                mlData[1].x = mlData[1].x != null ? mlData[1].x : pos[1][0];
-                mlData[1].y = mlData[1].y != null ? mlData[1].y : pos[1][1];
+                markLine.data[i][0].x = mlData[0].x != null ? mlData[0].x : pos[0][0];
+                markLine.data[i][0].y = mlData[0].y != null ? mlData[0].y : pos[0][1];
+                markLine.data[i][1].x = mlData[1].x != null ? mlData[1].x : pos[1][0];
+                markLine.data[i][1].y = mlData[1].y != null ? mlData[1].y : pos[1][1];
             }
             
             var shapeList = this._markLine(seriesIndex, markLine);
@@ -915,9 +915,9 @@ define(function (require) {
                     ) {
                         // 组装一个mergeData
                         var mergeData = this.deepMerge(mlData);
-                        var value = mergeData.value != null ? mergeData.value : '';
                         var queryTarget = [mergeData, mlOption];
                         var color = defaultColor;
+                        var value = mergeData.value != null ? mergeData.value : '';
                         // 值域
                         if (dataRange) {
                             color = isNaN(value) ? color : dataRange.getColor(value);
@@ -969,6 +969,7 @@ define(function (require) {
                     var edge = edges[i];
                     var rawEdge = edge.rawEdge || edge; 
                     var mlData = rawEdge.rawData;
+                    var value = mlData.value != null ? mlData.value : '';
 
                     var itemShape = this.getMarkLineShape(
                         mlOption,
@@ -1049,17 +1050,20 @@ define(function (require) {
                 'itemStyle.emphasis'
             );
             var nBorderWidth = normal.borderWidth != null
-                       ? normal.borderWidth
-                       : (normal.lineStyle && normal.lineStyle.width);
+                               ? normal.borderWidth
+                               : (normal.lineStyle && normal.lineStyle.width);
             if (nBorderWidth == null) {
                 nBorderWidth = symbol.match('empty') ? 2 : 0;
             }
             var eBorderWidth = emphasis.borderWidth != null
-                       ? emphasis.borderWidth
-                       : (emphasis.lineStyle && emphasis.lineStyle.width);
+                               ? emphasis.borderWidth
+                               : (emphasis.lineStyle && emphasis.lineStyle.width);
             if (eBorderWidth == null) {
                 eBorderWidth = nBorderWidth + 2;
             }
+
+            var nColor = this.getItemStyleColor(normal.color, seriesIndex, dataIndex, data);
+            var eColor = this.getItemStyleColor(emphasis.color, seriesIndex, dataIndex, data);
             
             var itemShape = new IconShape({
                 style: {
@@ -1070,22 +1074,20 @@ define(function (require) {
                     height: symbolSize * 2,
                     brushType: 'both',
                     color: symbol.match('empty') 
-                            ? emptyColor 
-                            : (this.getItemStyleColor(normal.color, seriesIndex, dataIndex, data)
-                               || color),
-                    strokeColor: normal.borderColor 
-                              || this.getItemStyleColor(normal.color, seriesIndex, dataIndex, data)
-                              || color,
+                           ? emptyColor 
+                           : (nColor || color),
+                    strokeColor: normal.borderColor || nColor || color,
                     lineWidth: nBorderWidth
                 },
                 highlightStyle: {
                     color: symbol.match('empty') 
-                            ? emptyColor 
-                            : this.getItemStyleColor(emphasis.color, seriesIndex, dataIndex, data),
+                           ? emptyColor 
+                           : (eColor || nColor || color),
                     strokeColor: emphasis.borderColor 
-                              || normal.borderColor
-                              || this.getItemStyleColor(normal.color, seriesIndex, dataIndex, data)
-                              || color,
+                                 || normal.borderColor
+                                 || eColor
+                                 || nColor
+                                 || color,
                     lineWidth: eBorderWidth
                 },
                 clickable: this.deepQuery(queryTarget, 'clickable')
